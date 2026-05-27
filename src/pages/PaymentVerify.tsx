@@ -3,6 +3,73 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { Button } from '../components/ui/Button';
 
+export const TicketReminderWidget: React.FC<{ ticketId: string }> = ({
+	ticketId,
+}) => {
+	const [isLoading, setIsLoading] = useState(false);
+	const [message, setMessage] = useState('');
+	const [delayHours, setDelayHours] = useState('24'); // Default: 1 day
+
+	const handleSetReminder = async () => {
+		setIsLoading(true);
+		setMessage('');
+
+		try {
+			// Hit your new custom reminder endpoint
+			const response = await api.post(`/tickets/${ticketId}/reminder`, {
+				delayInHours: Number(delayHours),
+			});
+
+			const scheduledDate = new Date(
+				response.data.data.scheduledFor,
+			).toLocaleString();
+			setMessage(`✅ Reminder scheduled for ${scheduledDate}`);
+		} catch (error) {
+			setMessage(
+				`❌ ${error.response?.data?.message || 'Failed to set reminder'}`,
+			);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	return (
+		<div className='p-4 mt-6 border border-gray-200 rounded-lg bg-gray-50'>
+			<h3 className='mb-2 text-sm font-bold text-gray-800'>
+				Never miss it! Set a reminder:
+			</h3>
+
+			<div className='flex gap-2'>
+				<select
+					value={delayHours}
+					onChange={(e) => setDelayHours(e.target.value)}
+					className='grow px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary'
+				>
+					<option value='1'>1 Hour Before</option>
+					<option value='24'>1 Day Before</option>
+					<option value='48'>2 Days Before</option>
+					<option value='168'>1 Week Before</option>
+				</select>
+
+				<Button
+					onClick={handleSetReminder}
+					isLoading={isLoading}
+					className='whitespace-nowrap'
+				>
+					Set
+				</Button>
+			</div>
+
+			{message && (
+				<p
+					className={`mt-3 text-xs font-medium ${message.startsWith('✅') ? 'text-green-600' : 'text-red-600'}`}
+				>
+					{message}
+				</p>
+			)}
+		</div>
+	);
+};
 
 export const PaymentVerify: React.FC = () => {
 	const [searchParams] = useSearchParams();
@@ -48,6 +115,19 @@ export const PaymentVerify: React.FC = () => {
 						</p>
 					</div>
 				)}
+
+				{/* <div className='p-4 mt-4 bg-white border rounded-lg shadow-sm'>
+					<h3 className='mb-2 text-md font-bold'>Set a Personal Reminder</h3>
+					<select
+						onChange={(e) => handleSetReminder(e.target.value)}
+						className='w-full px-4 py-2 border border-gray-300 rounded-md'
+					>
+						<option value='1_hour'>1 Hour Before</option>
+						<option value='1_day'>1 Day Before</option>
+						<option value='2_days'>2 Days Before</option>
+					</select>
+				</div> */}
+				<TicketReminderWidget ticketId={ticketData?._id} />
 
 				<Button
 					className='w-full mt-6'

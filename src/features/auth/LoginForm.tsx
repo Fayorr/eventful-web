@@ -71,7 +71,15 @@ export const LoginForm: React.FC = () => {
 				className='w-full mt-4'
 			>
 				Sign In
-			</Button>
+            </Button>
+            <Button
+                type='button'
+                variant='secondary'
+                className='w-full mt-2'
+                onClick={() => navigate('/register')}
+            >
+                Create Account
+            </Button>
 		</form>
 	);
 };

@@ -16,10 +16,13 @@ export const CreateEventForm: React.FC = () => {
 		location: '',
 		price: 0,
 		capacity: 0,
+		creatorReminder: 'none',
 	});
 
 	const handleChange = (
-		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+		e: React.ChangeEvent<
+			HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+		>,
 	) => {
 		const { name, value } = e.target;
 		setFormData((prev) => ({
@@ -118,6 +121,22 @@ export const CreateEventForm: React.FC = () => {
 					min='1'
 					required
 				/>
+			</div>
+
+			<div className='flex flex-col mb-4'>
+				<label className='mb-1 text-sm font-medium text-gray-700'>
+					Default Reminder for Attendees
+				</label>
+				<select
+					name='creatorReminder'
+					value={formData.creatorReminder}
+					onChange={handleChange}
+					className='px-4 py-2 border border-gray-300 rounded-md'
+				>
+					<option value='none'>No default reminder</option>
+					<option value='1_day'>1 Day Before</option>
+					<option value='1_week'>1 Week Before</option>
+				</select>
 			</div>
 
 			<Button
