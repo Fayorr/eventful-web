@@ -1,0 +1,13 @@
+@import 'tailwindcss';
+
+/* Define your Eventful brand theme */
+:root {
+	--color-primary: #10b981; /* Emerald green */
+	--color-dark: #111827;
+}
+
+/* Global resets */
+body {
+	background-color: rgb(249, 250, 251);
+	color: rgb(17, 24, 39);
+}
