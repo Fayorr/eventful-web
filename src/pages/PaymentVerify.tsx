@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { Button } from '../components/ui/Button';
+import axios from 'axios';
 
 interface Ticket {
 	_id: string;
@@ -30,10 +31,14 @@ export const TicketReminderWidget: React.FC<{ ticketId: string }> = ({
 				response.data.data.scheduledFor,
 			).toLocaleString();
 			setMessage(`✅ Reminder scheduled for ${scheduledDate}`);
-		} catch (error) {
-			setMessage(
-				`❌ ${error.response?.data?.message || 'Failed to set reminder'}`,
-			);
+		} catch (error: unknown) {
+			let errorMessage = 'Failed to set reminder';
+			if (axios.isAxiosError(error)) {
+				errorMessage = error.response?.data?.message || errorMessage;
+			} else if (error instanceof Error) {
+				errorMessage = error.message;
+			}
+			setMessage(`❌ ${errorMessage}`);
 		} finally {
 			setIsLoading(false);
 		}
@@ -107,7 +112,6 @@ export const PaymentVerify: React.FC = () => {
 		<div className='flex flex-col items-center justify-center min-h-screen p-4 bg-gray-50'>
 			<div className='w-full max-w-md p-8 text-center bg-white rounded-lg shadow-md'>
 				<h2 className='mb-4 text-2xl font-bold'>{status}</h2>
-
 				{ticketData && (
 					<div className='p-4 mt-6 border rounded-lg bg-gray-50'>
 						<h3 className='mb-2 text-lg font-semibold'>Your Ticket QR Code</h3>
@@ -122,20 +126,18 @@ export const PaymentVerify: React.FC = () => {
 						</p>
 					</div>
 				)}
-
 				{/* <div className='p-4 mt-4 bg-white border rounded-lg shadow-sm'>
-					<h3 className='mb-2 text-md font-bold'>Set a Personal Reminder</h3>
-					<select
-						onChange={(e) => handleSetReminder(e.target.value)}
-						className='w-full px-4 py-2 border border-gray-300 rounded-md'
-					>
-						<option value='1_hour'>1 Hour Before</option>
-						<option value='1_day'>1 Day Before</option>
-						<option value='2_days'>2 Days Before</option>
-					</select>
-				</div> */}
-				<TicketReminderWidget ticketId={ticketData?._id} />
-
+				<h3 className='mb-2 text-md font-bold'>Set a Personal Reminder</h3>
+				<select
+					onChange={(e) => handleSetReminder(e.target.value)}
+					className='w-full px-4 py-2 border border-gray-300 rounded-md'
+				>
+					<option value='1_hour'>1 Hour Before</option>
+					<option value='1_day'>1 Day Before</option>
+					<option value='2_days'>2 Days Before</option>
+				</select>
+			</div> */}
+				{ticketData && <TicketReminderWidget ticketId={ticketData._id} />}{' '}
 				<Button
 					className='w-full mt-6'
 					onClick={() => navigate('/events')}
