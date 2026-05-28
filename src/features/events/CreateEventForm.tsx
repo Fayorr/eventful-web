@@ -55,13 +55,11 @@ export const CreateEventForm: React.FC = () => {
 			className='max-w-2xl p-6 mx-auto bg-white rounded-lg shadow-md'
 		>
 			<h2 className='mb-6 text-2xl font-bold text-dark'>Create New Event</h2>
-
 			{error && (
 				<div className='p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-md'>
 					{error}
 				</div>
 			)}
-
 			<Input
 				label='Event Title'
 				name='title'
@@ -69,7 +67,6 @@ export const CreateEventForm: React.FC = () => {
 				onChange={handleChange}
 				required
 			/>
-
 			<div className='flex flex-col mb-4'>
 				<label className='mb-1 text-sm font-medium text-gray-700'>
 					Description
@@ -83,7 +80,6 @@ export const CreateEventForm: React.FC = () => {
 					required
 				/>
 			</div>
-
 			<div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
 				<Input
 					label='Date and Time'
@@ -101,28 +97,44 @@ export const CreateEventForm: React.FC = () => {
 					required
 				/>
 			</div>
-
 			<div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
 				<Input
 					label='Ticket Price (₦) - 0 for Free'
 					type='number'
 					name='price'
-					value={formData.price}
-					onChange={handleChange}
+					value={formData.price === 0 ? '' : formData.price}
+					onChange={(e) => {
+						const val = e.target.value === '' ? 0 : Number(e.target.value);
+						setFormData((prev) => ({ ...prev, price: val }));
+					}}
+					onBlur={(e) => {
+						if (e.target.value === '') {
+							setFormData((prev) => ({ ...prev, price: 0 }));
+						}
+					}}
 					min='0'
+					placeholder='0'
 					required
 				/>
 				<Input
 					label='Total Capacity'
 					type='number'
 					name='capacity'
-					value={formData.capacity}
-					onChange={handleChange}
+					value={formData.capacity === 0 ? '' : formData.capacity}
+					onChange={(e) => {
+						const val = e.target.value === '' ? 0 : Number(e.target.value);
+						setFormData((prev) => ({ ...prev, capacity: val }));
+					}}
+					onBlur={(e) => {
+						if (e.target.value === '') {
+							setFormData((prev) => ({ ...prev, capacity: 0 }));
+						}
+					}}
 					min='1'
+					placeholder='1'
 					required
 				/>
-			</div>
-
+			</div>{' '}
 			<div className='flex flex-col mb-4'>
 				<label className='mb-1 text-sm font-medium text-gray-700'>
 					Default Reminder for Attendees
@@ -138,7 +150,6 @@ export const CreateEventForm: React.FC = () => {
 					<option value='1_week'>1 Week Before</option>
 				</select>
 			</div>
-
 			<Button
 				type='submit'
 				variant='primary'
