@@ -40,7 +40,22 @@ export const Checkout: React.FC = () => {
 			fetchEvent();
 		}
 	}, [eventId]);
+	// Reset the loading state if the user clicks the browser's "Back" button
+	useEffect(() => {
+		const handlePageShow = (event: PageTransitionEvent) => {
+			// event.persisted is true if the page was loaded from the browser's back/forward cache
+			if (event.persisted) {
+				setIsProcessing(false);
+			}
+		};
 
+		window.addEventListener('pageshow', handlePageShow);
+
+		// Cleanup listener
+		return () => {
+			window.removeEventListener('pageshow', handlePageShow);
+		};
+	}, []);
 	const handleBuyTicket = async () => {
 		if (!eventId) return;
 
@@ -159,4 +174,4 @@ export const Checkout: React.FC = () => {
 			</div>
 		</div>
 	);
-};
+};;
