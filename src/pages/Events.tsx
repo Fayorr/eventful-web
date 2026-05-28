@@ -13,12 +13,20 @@ interface Event {
 	ticketsSold: number;
 }
 
+interface ShareLinks {
+	whatsapp: string;
+	twitter: string;
+	facebook: string;
+	linkedin: string;
+	copyUrl: string;
+}
+
 export const Events: React.FC = () => {
 	const [events, setEvents] = useState<Event[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 
 	// State to handle the sharing modal
-	const [shareLinks, setShareLinks] = useState(null);
+	const [shareLinks, setShareLinks] = useState<ShareLinks | null>(null);
 	const [activeShareEvent, setActiveShareEvent] = useState<string | null>(null);
 
 	useEffect(() => {
