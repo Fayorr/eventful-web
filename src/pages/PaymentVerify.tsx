@@ -3,6 +3,12 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { Button } from '../components/ui/Button';
 
+interface Ticket {
+	_id: string;
+	qrCodeUrl: string;
+	paymentReference: string;
+}
+
 export const TicketReminderWidget: React.FC<{ ticketId: string }> = ({
 	ticketId,
 }) => {
@@ -77,7 +83,7 @@ export const PaymentVerify: React.FC = () => {
 	const navigate = useNavigate();
 
 	const [status, setStatus] = useState('Verifying your payment...');
-	const [ticketData, setTicketData] = useState(null);
+	const [ticketData, setTicketData] = useState<Ticket | null>(null);
 
 	useEffect(() => {
 		const verifyTransaction = async () => {
@@ -86,10 +92,11 @@ export const PaymentVerify: React.FC = () => {
 				const response = await api.get(`/tickets/verify/${reference}`);
 				setTicketData(response.data.data);
 				setStatus('Payment successful! Here is your ticket.');
-            } catch (error: Error | unknown) {
-                
-                setStatus('Verification failed. Please contact support.');
-                console.error('Payment verification error:', error);
+			} catch (error: unknown) {
+				const errMessage =
+					error instanceof Error ? error.message : 'Unknown error';
+				setStatus('Verification failed. Please contact support.');
+				console.error('Payment verification error:', errMessage);
 			}
 		};
 
