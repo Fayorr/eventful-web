@@ -3,7 +3,7 @@ import { RegisterForm } from '../features/auth/RegisterForm';
 
 export const Register: React.FC = () => {
 	return (
-		<div className='flex items-center justify-center min-h-screen'>
+		<div className='w-full flex justify-center'>
 			<RegisterForm />
 		</div>
 	);
