@@ -5,17 +5,31 @@ export const login = async (credentials: {
 	password: string;
 }) => {
 	try {
-		console.log('Login attempt to:', api.defaults.baseURL + '/auth/login');
+		const baseURL = api.defaults.baseURL;
+		const fullURL = `${baseURL}/auth/login`;
+		console.log('🔐 Login attempt:', {
+			email: credentials.email,
+			url: fullURL,
+		});
+
 		const response = await api.post('/auth/login', credentials);
-		console.log('Login successful:', response.data);
+		console.log('✅ Login successful:', response.data);
 		return response.data;
-	} catch (error: any) {
-		console.error('Login error details:', {
-			message: error.message,
-			status: error.response?.status,
-			data: error.response?.data,
-			url: error.config?.url,
-			method: error.config?.method,
+	} catch (error: unknown) {
+		const err = error as {
+			message?: string;
+			response?: { status?: number; statusText?: string; data?: unknown };
+			config?: { url?: string; baseURL?: string; method?: string };
+		};
+		console.error('❌ Login error details:', {
+			message: err.message,
+			status: err.response?.status,
+			statusText: err.response?.statusText,
+			data: err.response?.data,
+			url: err.config?.url,
+			baseURL: err.config?.baseURL,
+			method: err.config?.method,
+			isNetworkError: !err.response,
 		});
 		throw error;
 	}
@@ -28,20 +42,31 @@ export const register = async (userData: {
 	role: string;
 }) => {
 	try {
-		console.log(
-			'Register attempt to:',
-			api.defaults.baseURL + '/auth/register',
-		);
+		const baseURL = api.defaults.baseURL;
+		const fullURL = `${baseURL}/auth/register`;
+		console.log('📝 Register attempt:', {
+			email: userData.email,
+			url: fullURL,
+		});
+
 		const response = await api.post('/auth/register', userData);
-		console.log('Register successful:', response.data);
+		console.log('✅ Register successful:', response.data);
 		return response.data;
-	} catch (error: any) {
-		console.error('Register error details:', {
-			message: error.message,
-			status: error.response?.status,
-			data: error.response?.data,
-			url: error.config?.url,
-			method: error.config?.method,
+	} catch (error: unknown) {
+		const err = error as {
+			message?: string;
+			response?: { status?: number; statusText?: string; data?: unknown };
+			config?: { url?: string; baseURL?: string; method?: string };
+		};
+		console.error('❌ Register error details:', {
+			message: err.message,
+			status: err.response?.status,
+			statusText: err.response?.statusText,
+			data: err.response?.data,
+			url: err.config?.url,
+			baseURL: err.config?.baseURL,
+			method: err.config?.method,
+			isNetworkError: !err.response,
 		});
 		throw error;
 	}

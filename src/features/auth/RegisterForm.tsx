@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { register } from './auth.service';
-import { Eye, EyeClosed,  } from 'lucide-react';
+import { Eye, EyeClosed } from 'lucide-react';
 
 export const RegisterForm: React.FC = () => {
 	const [formData, setFormData] = useState({
@@ -30,17 +30,33 @@ export const RegisterForm: React.FC = () => {
 
 		try {
 			const result = await register(formData);
-			localStorage.setItem('token', result.data.token);
-			localStorage.setItem('user', JSON.stringify(result.data.user));
+			console.log('Register response:', result);
 
-			if (result.data.user.role === 'creator') {
+			// The response structure is { status: 'success', data: { user, token, expiresAt } }
+			const token = result.data?.token;
+			const user = result.data?.user;
+
+			if (!token || !user) {
+				throw new Error('Invalid response from server');
+			}
+
+			localStorage.setItem('token', token);
+			localStorage.setItem('user', JSON.stringify(user));
+
+			if (user.role === 'creator') {
 				navigate('/dashboard');
 			} else {
 				navigate('/events');
 			}
 		} catch (err: unknown) {
-			const error = err as { response?: { data?: { message?: string } } };
-			setError(error.response?.data?.message || 'Registration failed');
+			const error = err as {
+				response?: { data?: { message?: string }; status?: number };
+				message?: string;
+			};
+			const errorMessage =
+				error.response?.data?.message || error.message || 'Registration failed';
+			setError(errorMessage);
+			console.error('Register error:', error);
 		} finally {
 			setIsLoading(false);
 		}
