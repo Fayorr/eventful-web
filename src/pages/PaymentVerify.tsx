@@ -95,7 +95,7 @@ export const PaymentVerify: React.FC = () => {
 			try {
 				// Call your backend verify endpoint
 				const response = await api.get(`/tickets/verify/${reference}`);
-				setTicketData(response.data.data);
+				setTicketData(response.data.data || response.data);
 				setStatus('Payment successful! Here is your ticket.');
 			} catch (error: unknown) {
 				const errMessage =
