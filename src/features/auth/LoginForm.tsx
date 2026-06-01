@@ -20,20 +20,37 @@ export const LoginForm: React.FC = () => {
 
 		try {
 			const result = await login({ email, password });
+			console.log('Login response:', result);
+
+			// The response structure is { status: 'success', data: { user, token, expiresAt } }
+			const token = result.data?.token;
+			const user = result.data?.user;
+
+			if (!token || !user) {
+				throw new Error('Invalid response from server');
+			}
 
 			// Save auth data
-			localStorage.setItem('token', result.data.token);
-			localStorage.setItem('user', JSON.stringify(result.data.user));
+			localStorage.setItem('token', token);
+			localStorage.setItem('user', JSON.stringify(user));
 
 			// Redirect based on role
-			if (result.data.user.role === 'creator') {
+			if (user.role === 'creator') {
 				navigate('/dashboard');
 			} else {
 				navigate('/events');
 			}
 		} catch (err: unknown) {
-			const error = err as { response?: { data?: { message?: string } } };
-			setError(error.response?.data?.message || 'Failed to login');
+			const error = err as {
+				response?: { data?: { message?: string }; status?: number };
+				message?: string;
+			};
+			const errorMessage =
+				error.response?.data?.message ||
+				error.message ||
+				'Failed to login. Please check your credentials and try again.';
+			setError(errorMessage);
+			console.error('Login error:', error);
 		} finally {
 			setIsLoading(false);
 		}
@@ -100,6 +117,3 @@ export const LoginForm: React.FC = () => {
 		</form>
 	);
 };
-
-
-
