@@ -55,6 +55,11 @@ export const Events: React.FC = () => {
 		}
 	};
 
+	// Separate events into available and past
+	const now = new Date();
+	const availableEvents = events.filter((event) => new Date(event.date) > now);
+	const pastEvents = events.filter((event) => new Date(event.date) <= now);
+
 	if (isLoading) {
 		return (
 			<div className='flex items-center justify-center min-h-screen'>
@@ -63,65 +68,85 @@ export const Events: React.FC = () => {
 		);
 	}
 
-	return (
-		<div className='relative'>
-			<h1 className='mb-8 text-3xl font-bold text-dark'>Upcoming Events</h1>
-			<div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'>
-				{events.map((event) => (
-					<div
-						key={event._id}
-						className='flex flex-col overflow-hidden bg-white rounded-lg shadow-md'
-					>
-						<div className='p-6 grow'>
-							<h3 className='mb-2 text-xl font-bold'>{event.title}</h3>
-							<p className='mb-4 text-sm text-gray-600 line-clamp-2'>
-								{event.description}
-							</p>
+	const renderEventCard = (event: Event, isPast: boolean = false) => (
+		<div
+			key={event._id}
+			className={`flex flex-col overflow-hidden rounded-lg shadow-md ${
+				isPast ? 'bg-gray-100' : 'bg-white'
+			}`}
+		>
+			{isPast && (
+				<div className='px-6 py-2 text-center text-sm font-semibold text-gray-600 bg-gray-200'>
+					Past Event
+				</div>
+			)}
+			<div className='p-6 grow'>
+				<h3 className='mb-2 text-xl font-bold'>{event.title}</h3>
+				<p className='mb-4 text-sm text-gray-600 line-clamp-2'>
+					{event.description}
+				</p>
 
-							<div className='mb-2 text-sm text-gray-500'>
-								📅 {new Date(event.date).toLocaleDateString()}
-							</div>
-							<div className='mb-4 text-sm text-gray-500'>
-								📍 {event.location}
-							</div>
+				<div className='mb-2 text-sm text-gray-500'>
+					📅 {new Date(event.date).toLocaleDateString()}
+				</div>
+				<div className='mb-4 text-sm text-gray-500'>📍 {event.location}</div>
 
-							<div className='flex items-center justify-between mt-auto'>
-								<span className='text-lg font-bold text-primary'>
-									{event.price === 0
-										? 'FREE'
-										: `₦${event.price.toLocaleString()}`}
-								</span>
-								<span className='text-xs text-gray-500'>
-									{event.capacity - event.ticketsSold} spots left
-								</span>
-							</div>
-						</div>
-
-						{/* Updated Button Row */}
-						<div className='flex gap-2 p-4 border-t bg-gray-50'>
-							<Button
-								className='w-full'
-								onClick={() =>
-									(window.location.href = `/checkout/${event._id}`)
-								}
-							>
-								Get Tickets
-							</Button>
-							<button
-								onClick={() => handleShareClick(event._id)}
-								className='px-4 py-2 text-sm font-medium transition-colors border rounded-md text-primary border-primary hover:bg-green-50'
-							>
-								Share
-							</button>
-						</div>
-					</div>
-				))}
+				<div className='flex items-center justify-between mt-auto'>
+					<span className='text-lg font-bold text-primary'>
+						{event.price === 0 ? 'FREE' : `₦${event.price.toLocaleString()}`}
+					</span>
+					<span className='text-xs text-gray-500'>
+						{event.capacity - event.ticketsSold} spots left
+					</span>
+				</div>
 			</div>
 
-			{/* Empty State */}
-			{events.length === 0 && (
-				<div className='p-8 text-center text-gray-500 bg-white rounded-lg shadow'>
-					No events found. Check back later!
+			{/* Updated Button Row */}
+			<div className='flex gap-2 p-4 border-t bg-gray-50'>
+				<Button
+					className={`w-full ${
+						isPast ? 'opacity-50 cursor-not-allowed bg-gray-400' : ''
+					}`}
+					disabled={isPast}
+					onClick={() =>
+						!isPast && (window.location.href = `/checkout/${event._id}`)
+					}
+				>
+					{isPast ? 'Event Ended' : 'Get Tickets'}
+				</Button>
+				<button
+					onClick={() => handleShareClick(event._id)}
+					className='px-4 py-2 text-sm font-medium transition-colors border rounded-md text-primary border-primary hover:bg-green-50'
+				>
+					Share
+				</button>
+			</div>
+		</div>
+	);
+
+	return (
+		<div className='relative'>
+			{/* Available Events Section */}
+			<div className='mb-12'>
+				<h1 className='mb-8 text-3xl font-bold text-dark'>Upcoming Events</h1>
+				{availableEvents.length > 0 ? (
+					<div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'>
+						{availableEvents.map((event) => renderEventCard(event, false))}
+					</div>
+				) : (
+					<div className='p-8 text-center text-gray-500 bg-white rounded-lg shadow'>
+						No upcoming events. Check back later!
+					</div>
+				)}
+			</div>
+
+			{/* Past Events Section */}
+			{pastEvents.length > 0 && (
+				<div>
+					<h2 className='mb-8 text-2xl font-bold text-dark'>Past Events</h2>
+					<div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'>
+						{pastEvents.map((event) => renderEventCard(event, true))}
+					</div>
 				</div>
 			)}
 
