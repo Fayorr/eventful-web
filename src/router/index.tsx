@@ -12,7 +12,7 @@ import { PaymentVerify } from '../pages/PaymentVerify';
 import { ScanTicket } from '../pages/ScanTicket';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { createBrowserRouter } from 'react-router-dom';
-
+import { MyTickets } from '../pages/MyTickets';
 export const router = createBrowserRouter([
 	{
 		path: '/',
@@ -38,6 +38,7 @@ export const router = createBrowserRouter([
 			{ path: 'create-event', element: <CreateEventForm /> }, // New route for the form
 			{ path: 'payment/verify', element: <PaymentVerify /> }, // New route for payment verification
 			{ path: 'scan/:reference', element: <ScanTicket /> }, // New route for ticket scanning
+			{ path: 'my-tickets', element: <MyTickets /> },
 		],
 	},
 ]);

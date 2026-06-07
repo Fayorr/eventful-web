@@ -31,6 +31,12 @@ export const MainLayout: React.FC = () => {
 								>
 									Explore Events
 								</Link>
+								<Link
+									to='/my-tickets'
+									className='inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 border-b-2 border-transparent hover:border-primary'
+								>
+									My Tickets
+								</Link>
 								{user?.role === 'creator' && (
 									<Link
 										to='/dashboard'
