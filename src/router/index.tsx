@@ -13,6 +13,7 @@ import { ScanTicket } from '../pages/ScanTicket';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { createBrowserRouter } from 'react-router-dom';
 import { MyTickets } from '../pages/MyTickets';
+import { VerifyEmail } from '../pages/VerifyEmail';
 export const router = createBrowserRouter([
 	{
 		path: '/',
@@ -41,4 +42,5 @@ export const router = createBrowserRouter([
 			{ path: 'my-tickets', element: <MyTickets /> },
 		],
 	},
+	{ path: 'verify-email/:token', element: <VerifyEmail /> },
 ]);

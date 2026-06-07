@@ -32,31 +32,22 @@ export const RegisterForm: React.FC = () => {
 			const result = await register(formData);
 			console.log('Register response:', result);
 
-			// The response structure is { status: 'success', data: { user, token, expiresAt } }
-			const token = result.data?.token;
-			const user = result.data?.user;
+			// 1. Show the success message from the backend
+			// result.data.message should contain: "Registration successful! Please check your email..."
+			const successMessage =
+				result.data?.message ||
+				'Registration successful! Please check your email.';
+			alert(successMessage);
 
-			if (!token || !user) {
-				throw new Error('Invalid response from server');
-			}
-
-			localStorage.setItem('token', token);
-			localStorage.setItem('user', JSON.stringify(user));
-
-			if (user.role === 'creator') {
-				navigate('/dashboard');
-			} else {
-				navigate('/events');
-			}
-		} catch (err: unknown) {
-			const error = err as {
-				response?: { data?: { message?: string }; status?: number };
-				message?: string;
-			};
-			const errorMessage =
-				error.response?.data?.message || error.message || 'Registration failed';
-			setError(errorMessage);
-			console.error('Register error:', error);
+			// 2. Redirect straight to login! No more setting localStorage here.
+			navigate('/login');
+		} catch (error: any) {
+			console.error('Registration error caught in component:', error);
+			const errorMsg =
+				error.response?.data?.message ||
+				error.message ||
+				'Registration failed. Please try again.';
+			setError(errorMsg);
 		} finally {
 			setIsLoading(false);
 		}
