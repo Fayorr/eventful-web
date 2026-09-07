@@ -1,17 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import {
+	ArrowUpRight,
+	CalendarDays,
+	Copy,
+	MapPin,
+	Search,
+	Share2,
+	Users,
+	X,
+} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../api/axios';
 import { Button } from '../components/ui/Button';
-
-interface Event {
-	_id: string;
-	title: string;
-	description: string;
-	date: string;
-	location: string;
-	price: number;
-	capacity: number;
-	ticketsSold: number;
-}
+import {
+	formatEventDate,
+	formatEventTime,
+	formatPrice,
+	getEventId,
+	type EventRecord,
+} from '../features/events/event.types';
 
 interface ShareLinks {
 	whatsapp: string;
@@ -21,182 +28,134 @@ interface ShareLinks {
 	copyUrl: string;
 }
 
-export const Events: React.FC = () => {
-	const [events, setEvents] = useState<Event[]>([]);
+export const Events = () => {
+	const [events, setEvents] = useState<EventRecord[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
-
-	// State to handle the sharing modal
+	const [error, setError] = useState('');
+	const [query, setQuery] = useState('');
 	const [shareLinks, setShareLinks] = useState<ShareLinks | null>(null);
-	const [activeShareEvent, setActiveShareEvent] = useState<string | null>(null);
+	const [shareTitle, setShareTitle] = useState('');
+	const [copyMessage, setCopyMessage] = useState('Copy link');
+	const [now] = useState(() => Date.now());
 
 	useEffect(() => {
-		const fetchEvents = async () => {
-			try {
-				const response = await api.get('/events');
-				setEvents(response.data.data);
-			} catch (error) {
-				console.error('Failed to load events', error);
-			} finally {
-				setIsLoading(false);
-			}
-		};
-
-		fetchEvents();
+		api
+			.get('/events', { params: { upcoming: false, limit: 100 } })
+			.then((response) => {
+				const payload = response.data?.data;
+				setEvents(Array.isArray(payload) ? payload : payload?.items ?? []);
+			})
+			.catch((err) => setError(err.response?.data?.message || 'We could not load events right now.'))
+			.finally(() => setIsLoading(false));
 	}, []);
 
-	const handleShareClick = async (eventId: string) => {
+	const filtered = useMemo(() => {
+		const term = query.trim().toLowerCase();
+		return term
+			? events.filter((event) => `${event.title} ${event.location}`.toLowerCase().includes(term))
+			: events;
+	}, [events, query]);
+
+	const upcoming = filtered.filter((event) => new Date(event.date).getTime() > now);
+	const past = filtered.filter((event) => new Date(event.date).getTime() <= now);
+
+	const openShare = async (event: EventRecord) => {
 		try {
-			// Hit your backend to generate the specific links for this event
-			const response = await api.get(`/events/${eventId}/share`);
+			const response = await api.get(`/events/${getEventId(event)}/share`);
 			setShareLinks(response.data.data);
-			setActiveShareEvent(eventId);
-		} catch (error) {
-			console.error('Failed to fetch share links', error);
+			setShareTitle(event.title);
+			setCopyMessage('Copy link');
+		} catch (err) {
+			console.error('Failed to load share links', err);
 		}
 	};
 
-	// Separate events into available and past
-	const now = new Date();
-	const availableEvents = events.filter((event) => new Date(event.date) > now);
-	const pastEvents = events.filter((event) => new Date(event.date) <= now);
+	const copyLink = async () => {
+		if (!shareLinks) return;
+		await navigator.clipboard.writeText(shareLinks.copyUrl);
+		setCopyMessage('Copied');
+	};
 
-	if (isLoading) {
+	const EventCard = ({ event, ended = false }: { event: EventRecord; ended?: boolean }) => {
+		const id = getEventId(event);
+		const remaining = Math.max(event.capacity - event.ticketsSold, 0);
 		return (
-			<div className='flex items-center justify-center min-h-screen'>
-				Loading amazing events...
-			</div>
+			<article className={`flex min-h-96 flex-col border bg-white p-6 ${ended ? 'border-slate-200 text-slate-500' : 'border-line'}`}>
+				<div className='flex items-center justify-between gap-4'>
+					<span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${ended ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-primary'}`}>
+						{ended ? 'Ended' : formatPrice(event.price)}
+					</span>
+					<button type='button' onClick={() => openShare(event)} className='grid size-10 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-ink' aria-label={`Share ${event.title}`}>
+						<Share2 size={18} />
+					</button>
+				</div>
+				<h2 className={`mt-7 text-2xl font-bold leading-tight ${ended ? 'text-slate-700' : 'text-ink'}`}>{event.title}</h2>
+				<p className='mt-3 line-clamp-3 text-base leading-7 text-slate-600'>{event.description}</p>
+				<div className='mt-auto space-y-3 border-t border-line pt-5 text-sm text-slate-600'>
+					<p className='flex items-start gap-3'><CalendarDays className='mt-0.5 shrink-0' size={17} /><span>{formatEventDate(event.date)} · {formatEventTime(event.date)}</span></p>
+					<p className='flex items-start gap-3'><MapPin className='mt-0.5 shrink-0' size={17} /><span>{event.location}</span></p>
+					{!ended && <p className='flex items-start gap-3'><Users className='mt-0.5 shrink-0' size={17} /><span>{remaining} {remaining === 1 ? 'place' : 'places'} left</span></p>}
+				</div>
+				<div className='mt-6'>
+					{ended ? (
+						<span className='inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-slate-100 text-sm font-semibold text-slate-500'>Event ended</span>
+					) : (
+						<Link to={`/events/${id}`} className='inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-dark'>View event <ArrowUpRight size={17} /></Link>
+					)}
+				</div>
+			</article>
 		);
-	}
+	};
 
-	const renderEventCard = (event: Event, isPast: boolean = false) => (
-		<div
-			key={event._id}
-			className={`flex flex-col overflow-hidden rounded-lg shadow-md ${
-				isPast ? 'bg-gray-100' : 'bg-white'
-			}`}
-		>
-			{isPast && (
-				<div className='px-6 py-2 text-center text-sm font-semibold text-gray-600 bg-gray-200'>
-					Past Event
-				</div>
-			)}
-			<div className='p-6 grow'>
-				<h3 className='mb-2 text-xl font-bold'>{event.title}</h3>
-				<p className='mb-4 text-sm text-gray-600 line-clamp-2'>
-					{event.description}
-				</p>
-
-				<div className='mb-2 text-sm text-gray-500'>
-					📅 {new Date(event.date).toLocaleDateString()}
-				</div>
-				<div className='mb-4 text-sm text-gray-500'>📍 {event.location}</div>
-
-				<div className='flex items-center justify-between mt-auto'>
-					<span className='text-lg font-bold text-primary'>
-						{event.price === 0 ? 'FREE' : `₦${event.price.toLocaleString()}`}
-					</span>
-					<span className='text-xs text-gray-500'>
-						{event.capacity - event.ticketsSold} spots left
-					</span>
-				</div>
-			</div>
-
-			{/* Updated Button Row */}
-			<div className='flex gap-2 p-4 border-t bg-gray-50'>
-				<Button
-					className={`w-full ${
-						isPast ? 'opacity-50 cursor-not-allowed bg-gray-400' : ''
-					}`}
-					disabled={isPast}
-					onClick={() =>
-						!isPast && (window.location.href = `/checkout/${event._id}`)
-					}
-				>
-					{isPast ? 'Event Ended' : 'Get Tickets'}
-				</Button>
-				<button
-					onClick={() => handleShareClick(event._id)}
-					className='px-4 py-2 text-sm font-medium transition-colors border rounded-md text-primary border-primary hover:bg-green-50'
-				>
-					Share
-				</button>
-			</div>
-		</div>
-	);
+	if (isLoading) return <div className='border border-line bg-white px-6 py-16 text-center text-slate-600'>Loading events…</div>;
 
 	return (
-		<div className='relative'>
-			{/* Available Events Section */}
-			<div className='mb-12'>
-				<h1 className='mb-8 text-3xl font-bold text-dark'>Upcoming Events</h1>
-				{availableEvents.length > 0 ? (
-					<div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'>
-						{availableEvents.map((event) => renderEventCard(event, false))}
-					</div>
-				) : (
-					<div className='p-8 text-center text-gray-500 bg-white rounded-lg shadow'>
-						No upcoming events. Check back later!
-					</div>
-				)}
+		<div>
+			<div className='flex flex-col justify-between gap-6 border-b border-line pb-8 lg:flex-row lg:items-end'>
+				<div>
+					<p className='text-sm font-bold uppercase tracking-[0.16em] text-primary'>Discover</p>
+					<h1 className='mt-2 text-4xl font-bold tracking-tight text-ink sm:text-5xl'>Upcoming events</h1>
+					<p className='mt-3 max-w-xl text-base text-slate-600'>Find something worth leaving the house for.</p>
+				</div>
+				<label className='relative block w-full lg:max-w-sm'>
+					<span className='sr-only'>Search events</span>
+					<Search className='absolute left-4 top-1/2 -translate-y-1/2 text-slate-400' size={19} />
+					<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder='Search by event or location' className='min-h-12 w-full rounded-xl border border-slate-300 bg-white pl-12 pr-4 text-base focus:border-primary focus:outline-none' />
+				</label>
 			</div>
 
-			{/* Past Events Section */}
-			{pastEvents.length > 0 && (
-				<div>
-					<h2 className='mb-8 text-2xl font-bold text-dark'>Past Events</h2>
-					<div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'>
-						{pastEvents.map((event) => renderEventCard(event, true))}
-					</div>
+			{error ? (
+				<div role='alert' className='mt-8 border-l-4 border-red-600 bg-red-50 px-5 py-4 text-red-800'>{error}</div>
+			) : upcoming.length ? (
+				<div className='mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3'>{upcoming.map((event) => <EventCard key={getEventId(event)} event={event} />)}</div>
+			) : (
+				<div className='mt-8 border border-line bg-white px-6 py-16 text-center'>
+					<h2 className='text-xl font-bold text-ink'>{query ? 'No matching events' : 'Nothing scheduled yet'}</h2>
+					<p className='mt-2 text-slate-600'>{query ? 'Try a different event name or location.' : 'Check back soon for new plans.'}</p>
 				</div>
 			)}
 
-			{/* Share Modal Overlay */}
-			{activeShareEvent && shareLinks && (
-				<div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50'>
-					<div className='w-full max-w-sm p-6 bg-white rounded-lg shadow-xl'>
-						<h3 className='mb-4 text-lg font-bold text-center'>
-							Share this Event
-						</h3>
-						<div className='flex flex-col gap-3'>
-							<a
-								href={shareLinks.whatsapp}
-								target='_blank'
-								rel='noopener noreferrer'
-								className='px-4 py-2 text-center text-white bg-green-500 rounded-md hover:bg-green-600'
-							>
-								Share on WhatsApp
-							</a>
-							<a
-								href={shareLinks.twitter}
-								target='_blank'
-								rel='noopener noreferrer'
-								className='px-4 py-2 text-center text-white bg-blue-400 rounded-md hover:bg-blue-500'
-							>
-								Share on Twitter
-							</a>
-							<a
-								href={shareLinks.facebook}
-								target='_blank'
-								rel='noopener noreferrer'
-								className='px-4 py-2 text-center text-white bg-blue-600 rounded-md hover:bg-blue-700'
-							>
-								Share on Facebook
-							</a>
-							<a
-								href={shareLinks.copyUrl}
-								target='_blank'
-								rel='noopener noreferrer'
-								className='px-4 py-2 text-center text-white bg-gray-500 rounded-md  hover:bg-black'
-							>
-								Copy Event Link
-							</a>
+			{past.length > 0 && (
+				<section className='mt-16 border-t border-line pt-10'>
+					<h2 className='text-2xl font-bold text-ink'>Past events</h2>
+					<div className='mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3'>{past.map((event) => <EventCard key={getEventId(event)} event={event} ended />)}</div>
+				</section>
+			)}
+
+			{shareLinks && (
+				<div className='fixed inset-0 z-50 grid place-items-center bg-slate-950/60 p-4' role='presentation' onMouseDown={(event) => event.target === event.currentTarget && setShareLinks(null)}>
+					<div role='dialog' aria-modal='true' aria-labelledby='share-title' className='w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl'>
+						<div className='flex items-start justify-between gap-5'>
+							<div><p className='text-sm font-bold uppercase tracking-wider text-primary'>Share event</p><h2 id='share-title' className='mt-2 text-2xl font-bold text-ink'>{shareTitle}</h2></div>
+							<button type='button' onClick={() => setShareLinks(null)} className='grid size-10 shrink-0 place-items-center rounded-lg text-slate-500 hover:bg-slate-100' aria-label='Close share dialog'><X size={20} /></button>
 						</div>
-						<button
-							onClick={() => setActiveShareEvent(null)}
-							className='w-full mt-4 text-sm  text-gray-500 hover:text-800 cursor-pointer'
-						>
-							Cancel
-						</button>
+						<div className='mt-6 grid grid-cols-2 gap-3'>
+							<a href={shareLinks.whatsapp} target='_blank' rel='noreferrer' className='rounded-xl border border-line px-4 py-3 text-center text-sm font-semibold text-ink hover:bg-slate-50'>WhatsApp</a>
+							<a href={shareLinks.twitter} target='_blank' rel='noreferrer' className='rounded-xl border border-line px-4 py-3 text-center text-sm font-semibold text-ink hover:bg-slate-50'>X / Twitter</a>
+							<a href={shareLinks.facebook} target='_blank' rel='noreferrer' className='rounded-xl border border-line px-4 py-3 text-center text-sm font-semibold text-ink hover:bg-slate-50'>Facebook</a>
+							<a href={shareLinks.linkedin} target='_blank' rel='noreferrer' className='rounded-xl border border-line px-4 py-3 text-center text-sm font-semibold text-ink hover:bg-slate-50'>LinkedIn</a>
+						</div>
+						<Button onClick={copyLink} className='mt-4 w-full'><Copy size={17} />{copyMessage}</Button>
 					</div>
 				</div>
 			)}

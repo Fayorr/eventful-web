@@ -10,7 +10,7 @@ export const setTicketReminder = async (
 	delayInHours: number,
 ) => {
 	const response = await api.post(`/tickets/${ticketId}/reminder`, {
-		delayInHours,
+		hoursBefore: delayInHours,
 	});
 	return response.data;
 };

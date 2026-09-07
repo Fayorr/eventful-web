@@ -14,11 +14,13 @@ import { ProtectedRoute } from '../components/ProtectedRoute';
 import { createBrowserRouter } from 'react-router-dom';
 import { MyTickets } from '../pages/MyTickets';
 import { VerifyEmail } from '../pages/VerifyEmail';
+import { EventDetails } from '../pages/EventDetails';
 export const router = createBrowserRouter([
 	{
 		path: '/',
 		element: <Home />,
 	},
+	{ path: 'events/:eventId', element: <EventDetails /> },
 	{
 		element: <AuthLayout />,
 		children: [
@@ -42,5 +44,5 @@ export const router = createBrowserRouter([
 			{ path: 'my-tickets', element: <MyTickets /> },
 		],
 	},
-	{ path: 'verify-email/:token', element: <VerifyEmail /> },
+	{ path: 'verify-email', element: <VerifyEmail /> },
 ]);
