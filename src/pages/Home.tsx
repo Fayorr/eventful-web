@@ -12,9 +12,54 @@ import api from '../api/axios';
 import { Button } from '../components/ui/Button';
 import { formatPrice, getEventId, type EventRecord } from '../features/events/event.types';
 
+const heroMessages = [
+	'organizers creating memorable events.',
+	'attendees discovering what’s next.',
+	'teams selling tickets securely.',
+	'staff running smoother check-ins.',
+];
+
+const useTypedHeadline = () => {
+	const [messageIndex, setMessageIndex] = useState(0);
+	const [characterCount, setCharacterCount] = useState(1);
+	const [isDeleting, setIsDeleting] = useState(false);
+	const [reduceMotion] = useState(() =>
+		window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+	);
+
+	useEffect(() => {
+		if (reduceMotion) return;
+
+		const message = heroMessages[messageIndex];
+		const atEnd = characterCount === message.length;
+		const atStart = characterCount === 0;
+		const delay = !isDeleting && atEnd ? 1900 : isDeleting && atStart ? 280 : isDeleting ? 32 : 58;
+
+		const timer = window.setTimeout(() => {
+			if (!isDeleting && atEnd) {
+				setIsDeleting(true);
+				return;
+			}
+			if (isDeleting && atStart) {
+				setMessageIndex((current) => (current + 1) % heroMessages.length);
+				setIsDeleting(false);
+				return;
+			}
+			setCharacterCount((current) => current + (isDeleting ? -1 : 1));
+		}, delay);
+
+		return () => window.clearTimeout(timer);
+	}, [characterCount, isDeleting, messageIndex, reduceMotion]);
+
+	return reduceMotion
+		? heroMessages[0]
+		: heroMessages[messageIndex].slice(0, characterCount);
+};
+
 export const Home = () => {
 	const [events, setEvents] = useState<EventRecord[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
+	const typedHeadline = useTypedHeadline();
 
 	useEffect(() => {
 		api
@@ -61,8 +106,15 @@ export const Home = () => {
 							<p className='mb-5 text-sm font-bold uppercase tracking-[0.18em] text-primary'>
 								Events worth showing up for
 							</p>
-							<h1 className='max-w-3xl text-5xl font-bold leading-[1.02] tracking-[-0.045em] text-ink sm:text-6xl lg:text-7xl'>
-								Find your next good night out.
+							<h1
+								className='max-w-3xl text-5xl font-bold leading-[1.02] tracking-[-0.045em] text-ink sm:text-6xl lg:text-7xl'
+								aria-label='Built for organizers, attendees, ticketing teams, and event staff.'
+							>
+								<span aria-hidden='true'>Built for</span>
+								<span aria-hidden='true' className='mt-2 block min-h-[2.05em] text-primary'>
+									{typedHeadline}
+									<span className='typing-caret' />
+								</span>
 							</h1>
 							<p className='mt-6 max-w-2xl text-lg leading-8 text-slate-600'>
 								Browse events, pay securely, and keep every ticket in one place. Hosting? Publish an event and follow sales from your dashboard.

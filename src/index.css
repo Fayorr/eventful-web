@@ -56,6 +56,20 @@ textarea:focus-visible {
 
 ::selection { background: #bde7dd; color: var(--color-ink); }
 
+.typing-caret {
+	display: inline-block;
+	width: 0.08em;
+	height: 0.82em;
+	margin-left: 0.08em;
+	background: currentColor;
+	animation: typing-caret 900ms steps(1, end) infinite;
+}
+
+@keyframes typing-caret {
+	0%, 46% { opacity: 1; }
+	47%, 100% { opacity: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
 	*,
 	*::before,
@@ -63,4 +77,6 @@ textarea:focus-visible {
 		scroll-behavior: auto !important;
 		transition-duration: 0.01ms !important;
 	}
+
+	.typing-caret { display: none; }
 }
