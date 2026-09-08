@@ -2,24 +2,28 @@ import React from 'react';
 
 // Button component for the eventful app
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-	variant?: 'primary' | 'secondary';
+	variant?: 'primary' | 'secondary' | 'danger';
 	isLoading?: boolean;
+	loadingText?: string;
 }
 
 export const Button: React.FC<ButtonProps> = ({
 	variant = 'primary',
 	isLoading = false,
+	loadingText = 'Please wait…',
 	children,
 	className = '',
 	disabled,
 	...props
 }) => {
 	const baseClass =
-		'px-4 py-2 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2';
-	const variantClass =
-		variant === 'primary'
-			? 'bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500'
-			: 'bg-gray-300 text-gray-800 hover:bg-gray-400 focus:ring-gray-300';
+		'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed';
+	const variantClass = {
+		primary: 'bg-primary text-white hover:bg-primary-dark',
+		secondary:
+			'border border-line bg-white text-ink hover:border-slate-400 hover:bg-slate-50',
+		danger: 'bg-red-700 text-white hover:bg-red-800',
+	}[variant];
 
 	return (
 		<button
@@ -29,7 +33,7 @@ export const Button: React.FC<ButtonProps> = ({
 			disabled={isLoading || disabled}
 			{...props}
 		>
-			{isLoading ? 'Loading...' : children}
+			{isLoading ? loadingText : children}
 		</button>
 	);
 };

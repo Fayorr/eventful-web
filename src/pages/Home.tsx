@@ -1,230 +1,223 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import {
+	ArrowRight,
+	BarChart3,
+	CalendarDays,
+	MapPin,
+	QrCode,
+	TicketCheck,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Button } from '../components/ui/Button';
 import api from '../api/axios';
+import { Button } from '../components/ui/Button';
+import { formatPrice, getEventId, type EventRecord } from '../features/events/event.types';
 
-// Define the Event interface so TypeScript is happy
-interface Event {
-	_id: string;
-	title: string;
-	description: string;
-	date: string;
-	location: string;
-	price: number;
-	capacity: number;
-	ticketsSold: number;
-}
+const heroMessages = [
+	'organizers creating memorable events.',
+	'attendees discovering what’s next.',
+	'teams selling tickets securely.',
+	'staff running smoother check-ins.',
+];
 
-export const Home: React.FC = () => {
-	const [events, setEvents] = useState<Event[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
+const useTypedHeadline = () => {
+	const [messageIndex, setMessageIndex] = useState(0);
+	const [characterCount, setCharacterCount] = useState(1);
+	const [isDeleting, setIsDeleting] = useState(false);
+	const [reduceMotion] = useState(() =>
+		window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+	);
 
 	useEffect(() => {
-		const fetchEvents = async () => {
-			try {
-				// This hits the public endpoint, no token required
-				const response = await api.get('/events');
-				setEvents(response.data.data);
-			} catch (error) {
-				console.error('Failed to load events', error);
-			} finally {
-				setIsLoading(false);
-			}
-		};
+		if (reduceMotion) return;
 
-		fetchEvents();
+		const message = heroMessages[messageIndex];
+		const atEnd = characterCount === message.length;
+		const atStart = characterCount === 0;
+		const delay = !isDeleting && atEnd ? 1900 : isDeleting && atStart ? 280 : isDeleting ? 32 : 58;
+
+		const timer = window.setTimeout(() => {
+			if (!isDeleting && atEnd) {
+				setIsDeleting(true);
+				return;
+			}
+			if (isDeleting && atStart) {
+				setMessageIndex((current) => (current + 1) % heroMessages.length);
+				setIsDeleting(false);
+				return;
+			}
+			setCharacterCount((current) => current + (isDeleting ? -1 : 1));
+		}, delay);
+
+		return () => window.clearTimeout(timer);
+	}, [characterCount, isDeleting, messageIndex, reduceMotion]);
+
+	return reduceMotion
+		? heroMessages[0]
+		: heroMessages[messageIndex].slice(0, characterCount);
+};
+
+export const Home = () => {
+	const [events, setEvents] = useState<EventRecord[]>([]);
+	const [isLoading, setIsLoading] = useState(true);
+	const typedHeadline = useTypedHeadline();
+
+	useEffect(() => {
+		api
+			.get('/events', { params: { upcoming: true, limit: 3 } })
+			.then((response) => {
+				const payload = response.data?.data;
+				setEvents(Array.isArray(payload) ? payload : payload?.items ?? []);
+			})
+			.catch(() => setEvents([]))
+			.finally(() => setIsLoading(false));
 	}, []);
 
-	// Filter for only future events, and take the first 3 for the teaser grid
-	const now = new Date();
-	const upcomingEvents = events
-		.filter((event) => new Date(event.date) > now)
-		.slice(0, 3);
-
 	return (
-		<div className='flex flex-col min-h-screen bg-gray-50'>
-			{/* Marketing Navigation */}
-			<nav className='flex items-center justify-between px-6 py-4 bg-white shadow-sm'>
-				<div className='text-2xl font-extrabold text-primary'>Eventful</div>
-				<div className='flex gap-4'>
+		<div className='min-h-screen bg-white'>
+			<header className='border-b border-line bg-white'>
+				<div className='mx-auto flex h-18 max-w-7xl items-center justify-between px-5 sm:px-8'>
 					<Link
-						to='/login'
-						className='px-4 py-2 font-medium text-gray-600 hover:text-primary'
+						to='/'
+						className='flex items-center gap-2 text-xl font-bold tracking-tight text-ink'
 					>
-						Log In
+						<span className='grid size-9 place-items-center rounded-xl bg-primary text-white'>
+							<TicketCheck size={20} strokeWidth={2.2} />
+						</span>
+						Eventful
 					</Link>
-					<Link to='/register'>
-						<Button>Sign Up</Button>
-					</Link>
+					<nav aria-label='Public navigation' className='flex items-center gap-2 sm:gap-4'>
+						<Link
+							to='/login'
+							className='rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100'
+						>
+							Log in
+						</Link>
+						<Link to='/register'>
+							<Button className='min-h-10 px-4 py-2'>Create account</Button>
+						</Link>
+					</nav>
 				</div>
-			</nav>
+			</header>
 
-			{/* Hero Section */}
-			<main className='grow'>
-				<section className='max-w-5xl px-6 py-20 mx-auto text-center'>
-					<h1 className='mb-6 text-5xl font-extrabold tracking-tight md:text-7xl text-dark'>
-						Your Passport to{' '}
-						<span className='text-primary'>Unforgettable Moments</span>
-					</h1>
-					<p className='max-w-2xl mx-auto mb-10 text-xl text-gray-600'>
-						Discover amazing local events, securely buy tickets, or host your
-						own experiences with enterprise-grade analytics and instant QR code
-						scanning.
-					</p>
-					<div className='flex flex-col justify-center gap-4 sm:flex-row'>
-						<Link to='/register'>
-							<Button className='w-full px-8 py-4 text-lg sm:w-auto'>
-								Get Started
-							</Button>
-						</Link>
-						<Link to='/register'>
-							<Button
-								variant='secondary'
-								className='w-full px-8 py-4 text-lg bg-white border border-gray-300 sm:w-auto'
+			<main>
+				<section className='border-b border-line bg-canvas'>
+					<div className='mx-auto grid max-w-7xl gap-12 px-5 py-18 sm:px-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:py-24'>
+						<div className='max-w-3xl'>
+							<p className='mb-5 text-sm font-bold uppercase tracking-[0.18em] text-primary'>
+								Events worth showing up for
+							</p>
+							<h1
+								className='max-w-3xl text-5xl font-bold leading-[1.02] tracking-[-0.045em] text-ink sm:text-6xl lg:text-7xl'
+								aria-label='Built for organizers, attendees, ticketing teams, and event staff.'
 							>
-								Become a Creator
-							</Button>
-						</Link>
-					</div>
-				</section>
-
-				{/* TEASER SECTION: Upcoming Events */}
-				<section className='px-6 py-16 bg-gray-50'>
-					<div className='max-w-7xl mx-auto'>
-						<div className='flex items-end justify-between mb-8'>
-							<div>
-								<h2 className='text-3xl font-bold text-dark'>Trending Now</h2>
-								<p className='mt-2 text-gray-600'>
-									Grab your tickets before they sell out.
-								</p>
-							</div>
-						</div>
-
-						{isLoading ? (
-							<div className='py-20 text-center text-gray-500 animate-pulse'>
-								Loading amazing events...
-							</div>
-						) : upcomingEvents.length > 0 ? (
-							<div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'>
-								{upcomingEvents.map((event) => (
-									<div
-										key={event._id}
-										className='flex flex-col overflow-hidden bg-white border border-gray-100 rounded-lg shadow-sm transition-shadow hover:shadow-md'
-									>
-										<div className='p-6 grow'>
-											<h3 className='mb-2 text-xl font-bold'>{event.title}</h3>
-											<p className='mb-4 text-sm text-gray-600 line-clamp-2'>
-												{event.description}
-											</p>
-
-											<div className='mb-2 text-sm text-gray-500'>
-												📅 {new Date(event.date).toLocaleDateString()}
-											</div>
-											<div className='mb-4 text-sm text-gray-500'>
-												📍 {event.location}
-											</div>
-
-											<div className='flex items-center justify-between mt-auto'>
-												<span className='text-lg font-bold text-primary'>
-													{event.price === 0
-														? 'FREE'
-														: `₦${event.price.toLocaleString()}`}
-												</span>
-											</div>
-										</div>
-
-										{/* Teaser Button - Routes to Register */}
-										<div className='flex gap-2 p-4 border-t bg-gray-50'>
-											<Link
-												to='/register'
-												className='w-full'
-											>
-												<Button className='w-full'>Sign Up for Tickets</Button>
-											</Link>
-										</div>
-									</div>
-								))}
-							</div>
-						) : (
-							<div className='p-8 text-center text-gray-500 bg-white rounded-lg shadow'>
-								No upcoming events at the moment. Check back soon!
-							</div>
-						)}
-
-						{/* Call to action to see all events */}
-						{!isLoading && upcomingEvents.length > 0 && (
-							<div className='mt-10 text-center'>
-								<Link
-									to='/register'
-									className='text-lg font-medium transition-colors text-primary hover:text-green-700'
-								>
-									Sign up to explore all events &rarr;
+								<span aria-hidden='true'>Built for</span>
+								<span aria-hidden='true' className='mt-2 block min-h-[2.05em] text-primary'>
+									{typedHeadline}
+									<span className='typing-caret' />
+								</span>
+							</h1>
+							<p className='mt-6 max-w-2xl text-lg leading-8 text-slate-600'>
+								Browse events, pay securely, and keep every ticket in one place. Hosting? Publish an event and follow sales from your dashboard.
+							</p>
+							<div className='mt-8 flex flex-col gap-3 sm:flex-row'>
+								<Link to='/register'>
+									<Button className='w-full sm:w-auto'>
+										Explore events <ArrowRight size={17} />
+									</Button>
+								</Link>
+								<Link to='/register'>
+									<Button variant='secondary' className='w-full sm:w-auto'>Host an event</Button>
 								</Link>
 							</div>
-						)}
+						</div>
+
+						<div className='border border-line bg-white p-3 shadow-[0_24px_70px_rgba(18,33,31,0.10)] sm:p-5'>
+							<div className='bg-ink p-6 text-white sm:p-8'>
+								<div className='flex items-start justify-between gap-6'>
+									<div>
+										<p className='text-sm font-semibold text-emerald-200'>Your entry is ready</p>
+										<p className='mt-2 text-2xl font-bold'>One ticket. No queue drama.</p>
+									</div>
+									<QrCode className='shrink-0 text-emerald-300' size={48} strokeWidth={1.5} />
+								</div>
+								<div className='mt-12 grid grid-cols-2 gap-3 border-t border-white/15 pt-5 text-sm'>
+									<div>
+										<span className='block text-slate-400'>Payment</span>
+										<strong className='mt-1 block'>Secured by Paystack</strong>
+									</div>
+									<div>
+										<span className='block text-slate-400'>Entry</span>
+										<strong className='mt-1 block'>One-time QR scan</strong>
+									</div>
+								</div>
+							</div>
+						</div>
 					</div>
 				</section>
 
-				{/* Features Section */}
-				<section className='py-20 bg-white'>
-					<div className='px-6 mx-auto max-w-7xl'>
-						<h2 className='mb-12 text-3xl font-bold text-center text-dark'>
-							Built for both sides of the ticket
-						</h2>
-
-						<div className='grid grid-cols-1 gap-10 md:grid-cols-3'>
-							{/* Feature 1 */}
-							<div className='p-6 border border-gray-100 bg-gray-50 rounded-2xl'>
-								<div className='flex items-center justify-center mb-4 text-2xl text-green-600 bg-green-100 w-12 h-12 rounded-xl'>
-									🎫
-								</div>
-								<h3 className='mb-2 text-xl font-bold text-dark'>
-									Instant Ticketing
-								</h3>
-								<p className='text-gray-600'>
-									Powered by Paystack. Buy your tickets securely and receive a
-									unique QR code instantly in your dashboard.
-								</p>
-							</div>
-
-							{/* Feature 2 */}
-							<div className='p-6 border border-gray-100 bg-gray-50 rounded-2xl'>
-								<div className='flex items-center justify-center mb-4 text-2xl text-blue-600 bg-blue-100 w-12 h-12 rounded-xl'>
-									📱
-								</div>
-								<h3 className='mb-2 text-xl font-bold text-dark'>
-									Seamless Scanning
-								</h3>
-								<p className='text-gray-600'>
-									Creators can scan attendee QR codes directly from their
-									smartphones at the door. No extra hardware required.
-								</p>
-							</div>
-
-							{/* Feature 3 */}
-							<div className='p-6 border border-gray-100 bg-gray-50 rounded-2xl'>
-								<div className='flex items-center justify-center mb-4 text-2xl text-purple-600 bg-purple-100 w-12 h-12 rounded-xl'>
-									📈
-								</div>
-								<h3 className='mb-2 text-xl font-bold text-dark'>
-									Creator Analytics
-								</h3>
-								<p className='text-gray-600'>
-									Track your revenue, monitor ticket sales, and view live
-									attendance data straight from your Creator Dashboard.
-								</p>
-							</div>
+				<section className='mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:py-20'>
+					<div className='mb-8 flex items-end justify-between gap-6'>
+						<div>
+							<p className='text-sm font-bold uppercase tracking-[0.15em] text-primary'>Coming up</p>
+							<h2 className='mt-2 text-3xl font-bold tracking-tight text-ink sm:text-4xl'>Make plans.</h2>
 						</div>
+						<Link
+							to='/register'
+							className='hidden items-center gap-2 text-sm font-bold text-primary hover:text-primary-dark sm:flex'
+						>
+							See all events <ArrowRight size={16} />
+						</Link>
+					</div>
+
+					{isLoading ? (
+						<div className='border border-line bg-canvas px-6 py-14 text-center text-slate-600'>Loading upcoming events…</div>
+					) : events.length ? (
+						<div className='grid gap-px overflow-hidden border border-line bg-line md:grid-cols-3'>
+							{events.map((event, index) => (
+								<article key={getEventId(event)} className='flex min-h-72 flex-col bg-white p-6'>
+									<div className='flex items-center justify-between gap-4'>
+										<span className='text-sm font-bold text-primary'>{formatPrice(event.price)}</span>
+										<span className='text-sm font-semibold text-slate-400'>0{index + 1}</span>
+									</div>
+									<h3 className='mt-8 text-2xl font-bold leading-tight text-ink'>{event.title}</h3>
+									<p className='mt-3 line-clamp-2 text-base leading-7 text-slate-600'>{event.description}</p>
+									<div className='mt-auto space-y-2 border-t border-line pt-5 text-sm text-slate-600'>
+										<p className='flex items-center gap-2'><CalendarDays size={16} />{new Date(event.date).toLocaleDateString('en-NG', { dateStyle: 'medium' })}</p>
+										<p className='flex items-center gap-2'><MapPin size={16} /><span className='truncate'>{event.location}</span></p>
+									</div>
+								</article>
+							))}
+						</div>
+					) : (
+						<div className='border border-line bg-canvas px-6 py-14 text-center'>
+							<h3 className='text-lg font-bold text-ink'>No events announced yet</h3>
+							<p className='mt-2 text-slate-600'>Create an account and be first to know when plans land.</p>
+						</div>
+					)}
+				</section>
+
+				<section className='bg-ink text-white'>
+					<div className='mx-auto grid max-w-7xl gap-px bg-white/15 md:grid-cols-3'>
+						{[
+							{ icon: TicketCheck, title: 'Buy with confidence', text: 'Clear pricing and secure Paystack checkout.' },
+							{ icon: QrCode, title: 'Walk straight in', text: 'Your ticket arrives with a one-time QR code.' },
+							{ icon: BarChart3, title: 'Know your crowd', text: 'Creators see sales, attendance, and revenue.' },
+						].map(({ icon: Icon, title, text }) => (
+							<div key={title} className='bg-ink px-6 py-10 sm:px-8'>
+								<Icon className='text-emerald-300' size={24} />
+								<h3 className='mt-5 text-xl font-bold'>{title}</h3>
+								<p className='mt-2 text-base leading-7 text-slate-300'>{text}</p>
+							</div>
+						))}
 					</div>
 				</section>
 			</main>
 
-			{/* Footer */}
-			<footer className='py-10 text-center text-white bg-dark'>
-				<p className='text-gray-400'>
-					© {new Date().getFullYear()} Eventful API Capstone. Built with MERN,
-					Redis, and Vite.
-				</p>
+			<footer className='border-t border-line bg-white'>
+				<div className='mx-auto flex max-w-7xl flex-col gap-2 px-5 py-8 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-8'>
+					<p>© {new Date().getFullYear()} Eventful</p>
+					<p>Ticketing for memorable gatherings.</p>
+				</div>
 			</footer>
 		</div>
 	);

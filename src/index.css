@@ -1,13 +1,82 @@
 @import 'tailwindcss';
 
-/* Define your Eventful brand theme */
-:root {
-	--color-primary: #10b981; /* Emerald green */
-	--color-dark: #111827;
+@theme {
+	--color-primary: #0b6b5d;
+	--color-primary-dark: #075347;
+	--color-ink: #12211f;
+	--color-canvas: #f4f7f5;
+	--color-line: #dce5e1;
+	--color-accent: #e05b3f;
+	--font-sans: 'Avenir Next', Avenir, 'Segoe UI', sans-serif;
 }
 
-/* Global resets */
+:root {
+	font-family: var(--font-sans);
+	color: var(--color-ink);
+	background: var(--color-canvas);
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+
+html,
 body {
-	background-color: rgb(249, 250, 251);
-	color: rgb(17, 24, 39);
+	min-width: 320px;
+	min-height: 100%;
+	background: var(--color-canvas);
+}
+
+body {
+	margin: 0;
+	color: var(--color-ink);
+	font-size: 1rem;
+	line-height: 1.5;
+}
+
+button,
+a,
+input,
+select,
+textarea { -webkit-tap-highlight-color: transparent; }
+
+button,
+a {
+	transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, opacity 150ms ease;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+	outline: 3px solid rgb(11 107 93 / 22%);
+	outline-offset: 2px;
+}
+
+::selection { background: #bde7dd; color: var(--color-ink); }
+
+.typing-caret {
+	display: inline-block;
+	width: 0.08em;
+	height: 0.82em;
+	margin-left: 0.08em;
+	background: currentColor;
+	animation: typing-caret 900ms steps(1, end) infinite;
+}
+
+@keyframes typing-caret {
+	0%, 46% { opacity: 1; }
+	47%, 100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		scroll-behavior: auto !important;
+		transition-duration: 0.01ms !important;
+	}
+
+	.typing-caret { display: none; }
 }

@@ -1,23 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import { CalendarRange, CheckCircle2, Plus, Ticket, WalletCards } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-	getCreatorAnalytics,
-	getPaymentHistory,
-} from '../features/dashboard/dashboard.service';
+import { getCreatorAnalytics, getPaymentHistory } from '../features/dashboard/dashboard.service';
 
 interface Analytics {
+	totalEvents: number;
 	totalTicketsSold: number;
 	totalAttendees: number;
+	attendanceRate: number;
+	totalRevenue: number;
 }
 
 interface Transaction {
-	_id: string;
+	id?: string;
+	_id?: string;
 	amount?: number;
-	date?: string;
 	status?: string;
-	event?: { title: string; price: number };
-	eventee?: { email: string };
+	paidAt?: string;
 	createdAt: string;
+	event?: { title: string };
+	eventee?: { name?: string; email: string };
 }
 
 interface PaymentLedger {
@@ -26,120 +28,85 @@ interface PaymentLedger {
 	transactions: Transaction[];
 }
 
-export const CreatorDashboard: React.FC = () => {
+const money = (amount = 0) =>
+	new Intl.NumberFormat('en-NG', {
+		style: 'currency',
+		currency: 'NGN',
+		maximumFractionDigits: 0,
+	}).format(amount);
+
+export const CreatorDashboard = () => {
 	const [analytics, setAnalytics] = useState<Analytics | null>(null);
 	const [ledger, setLedger] = useState<PaymentLedger | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
+	const [error, setError] = useState('');
 
 	useEffect(() => {
-		const fetchDashboardData = async () => {
-			try {
-				const [analyticsRes, ledgerRes] = await Promise.all([
-					getCreatorAnalytics(),
-					getPaymentHistory(),
-				]);
-				setAnalytics(analyticsRes.data);
-				setLedger(ledgerRes.data);
-			} catch (error) {
-				console.error('Failed to load dashboard data', error);
-			} finally {
-				setIsLoading(false);
-			}
-		};
-
-		fetchDashboardData();
+		Promise.all([getCreatorAnalytics(), getPaymentHistory()])
+			.then(([analyticsResponse, ledgerResponse]) => {
+				setAnalytics(analyticsResponse.data);
+				setLedger(ledgerResponse.data);
+			})
+			.catch((err) => setError(err.response?.data?.message || 'We could not load your dashboard.'))
+			.finally(() => setIsLoading(false));
 	}, []);
 
-	if (isLoading)
-		return <div className='text-center py-10'>Loading your dashboard...</div>;
+	if (isLoading) return <div className='border border-line bg-white px-6 py-16 text-center text-slate-600'>Loading dashboard…</div>;
+
+	const stats = [
+		{ label: 'Revenue', value: money(ledger?.totalRevenue ?? analytics?.totalRevenue), icon: WalletCards },
+		{ label: 'Events', value: analytics?.totalEvents ?? 0, icon: CalendarRange },
+		{ label: 'Tickets sold', value: analytics?.totalTicketsSold ?? 0, icon: Ticket },
+		{ label: 'Checked in', value: analytics?.totalAttendees ?? 0, icon: CheckCircle2 },
+	];
 
 	return (
 		<div>
-			<div className='flex items-center justify-between mb-8'>
-				<h1 className='text-3xl font-bold text-dark'>Creator Dashboard</h1>
-				<Link
-					to='/create-event'
-					className='px-4 py-2 font-medium border-2 text-white transition-colors rounded-md bg-emerald-500 hover:bg-white hover:text-emerald-500 hover:border-2 hover:border-emerald-600'
-				>
-					+ Create Event
-				</Link>
+			<div className='flex flex-col justify-between gap-5 border-b border-line pb-8 sm:flex-row sm:items-end'>
+				<div>
+					<p className='text-sm font-bold uppercase tracking-[0.16em] text-primary'>Creator overview</p>
+					<h1 className='mt-2 text-4xl font-bold tracking-tight text-ink sm:text-5xl'>Dashboard</h1>
+					<p className='mt-3 text-slate-600'>Sales and attendance across all your events.</p>
+				</div>
+				<Link to='/create-event' className='inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-dark'><Plus size={18} />Create event</Link>
 			</div>
 
-			{/* Analytics Top Cards */}
-			<div className='grid grid-cols-1 gap-6 mb-10 sm:grid-cols-3'>
-				<div className='p-6 bg-white border-l-4 rounded-lg shadow-sm border-primary'>
-					<h3 className='text-sm font-medium text-gray-500'>Total Revenue</h3>
-					<p className='mt-2 text-3xl font-extrabold text-dark'>
-						₦{ledger?.totalRevenue.toLocaleString() || 0}
-					</p>
-				</div>
-				<div className='p-6 bg-white border-l-4 border-blue-500 rounded-lg shadow-sm'>
-					<h3 className='text-sm font-medium text-gray-500'>Tickets Sold</h3>
-					<p className='mt-2 text-3xl font-extrabold text-dark'>
-						{analytics?.totalTicketsSold || 0}
-					</p>
-				</div>
-				<div className='p-6 bg-white border-l-4 border-purple-500 rounded-lg shadow-sm'>
-					<h3 className='text-sm font-medium text-gray-500'>
-						Attendees Scanned
-					</h3>
-					<p className='mt-2 text-3xl font-extrabold text-dark'>
-						{analytics?.totalAttendees || 0}
-					</p>
-				</div>
+			{error && <div role='alert' className='mt-8 border-l-4 border-red-600 bg-red-50 px-5 py-4 text-red-800'>{error}</div>}
+
+			<div className='mt-8 grid gap-px overflow-hidden border border-line bg-line sm:grid-cols-2 xl:grid-cols-4'>
+				{stats.map(({ label, value, icon: Icon }) => (
+					<div key={label} className='bg-white p-6'>
+						<div className='flex items-center justify-between gap-5'><span className='text-sm font-semibold text-slate-500'>{label}</span><Icon size={19} className='text-primary' /></div>
+						<p className='mt-7 text-3xl font-bold tracking-tight text-ink'>{value}</p>
+					</div>
+				))}
 			</div>
 
-			{/* Payment Ledger Table */}
-			<h2 className='mb-4 text-xl font-bold text-dark'>Recent Transactions</h2>
-			<div className='overflow-hidden bg-white rounded-lg shadow'>
-				<table className='min-w-full divide-y divide-gray-200'>
-					<thead className='bg-gray-50'>
-						<tr>
-							<th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-								Event
-							</th>
-							<th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-								Buyer
-							</th>
-							<th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-								Amount
-							</th>
-							<th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-								Date
-							</th>
-						</tr>
-					</thead>
-					<tbody className='bg-white divide-y divide-gray-200'>
-						{ledger?.transactions.length === 0 ? (
-							<tr>
-								<td
-									colSpan={4}
-									className='px-6 py-4 text-sm text-center text-gray-500'
-								>
-									No transactions yet.
-								</td>
-							</tr>
-						) : (
-							ledger?.transactions.map((tx: Transaction) => (
-								<tr key={tx._id}>
-									<td className='px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap'>
-										{tx.event?.title}
-									</td>
-									<td className='px-6 py-4 text-sm text-gray-500 whitespace-nowrap'>
-										{tx.eventee?.email}
-									</td>
-									<td className='px-6 py-4 text-sm font-bold text-green-600 whitespace-nowrap'>
-										₦{tx.event?.price.toLocaleString()}
-									</td>
-									<td className='px-6 py-4 text-sm text-gray-500 whitespace-nowrap'>
-										{new Date(tx.createdAt).toLocaleDateString()}
-									</td>
+			<section className='mt-10'>
+				<div className='mb-4 flex items-center justify-between gap-4'>
+					<h2 className='text-2xl font-bold text-ink'>Recent payments</h2>
+					<p className='text-sm text-slate-500'>{ledger?.transactionCount ?? 0} total</p>
+				</div>
+				<div className='overflow-x-auto border border-line bg-white'>
+					<table className='min-w-full border-collapse text-left'>
+						<thead className='border-b border-line bg-slate-50 text-sm text-slate-500'>
+							<tr><th className='px-5 py-4 font-semibold'>Event</th><th className='px-5 py-4 font-semibold'>Buyer</th><th className='px-5 py-4 font-semibold'>Amount</th><th className='px-5 py-4 font-semibold'>Date</th></tr>
+						</thead>
+						<tbody className='divide-y divide-line text-sm'>
+							{ledger?.transactions?.length ? ledger.transactions.map((transaction) => (
+								<tr key={transaction.id ?? transaction._id} className='hover:bg-slate-50'>
+									<td className='whitespace-nowrap px-5 py-4 font-semibold text-ink'>{transaction.event?.title ?? 'Event'}</td>
+									<td className='px-5 py-4 text-slate-600'><span className='block font-medium text-ink'>{transaction.eventee?.name ?? 'Attendee'}</span>{transaction.eventee?.email}</td>
+									<td className='whitespace-nowrap px-5 py-4 font-semibold text-primary'>{money(transaction.amount)}</td>
+									<td className='whitespace-nowrap px-5 py-4 text-slate-600'>{new Date(transaction.paidAt ?? transaction.createdAt).toLocaleDateString('en-NG', { dateStyle: 'medium' })}</td>
 								</tr>
-							))
-						)}
-					</tbody>
-				</table>
-			</div>
+							)) : (
+								<tr><td colSpan={4} className='px-5 py-14 text-center text-slate-500'>Payments will appear here after your first ticket sale.</td></tr>
+							)}
+						</tbody>
+					</table>
+				</div>
+			</section>
 		</div>
 	);
 };
