@@ -4,9 +4,9 @@ const configuredUrl = (
 	import.meta.env.VITE_API_URL || 'https://eventful-api.hostless.app'
 ).replace(/\/$/, '');
 
-const baseURL = configuredUrl.endsWith('/api/v2')
+const baseURL = /\/api\/v\d+$/.test(configuredUrl)
 	? configuredUrl
-	: `${configuredUrl}/api/v2`;
+	: `${configuredUrl}/api/v1`;
 
 const api = axios.create({
 	baseURL,
