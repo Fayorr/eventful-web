@@ -15,9 +15,8 @@ npm install
 npm run dev
 ```
 
-The app preserves an explicit version in `VITE_API_URL` (`/api/v1` or `/api/v2`).
-If no version is provided, it falls back to the currently deployed `/api/v1` API.
-Switch the production value to `/api/v2` when Backend V2 is deployed.
+`VITE_API_URL` contains the backend origin. The client uses the deployed `/api/v2`
+API automatically.
 
 ## Quality checks
 
