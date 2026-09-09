@@ -1,33 +1,18 @@
 import axios from 'axios';
 
-const configuredUrl = (
-	import.meta.env.VITE_API_URL || 'https://eventful-api.hostless.app'
-).replace(/\/$/, '');
-
-const baseURL = configuredUrl.endsWith('/api/v2')
-	? configuredUrl
-	: `${configuredUrl}/api/v2`;
+const backendUrl =
+	import.meta.env.VITE_API_URL || 'https://eventful-api.hostless.app';
+const baseURL = new URL('/api/v2', backendUrl).toString();
 
 const api = axios.create({
 	baseURL,
-	headers: {
-		'Content-Type': 'application/json',
-	},
 });
 
-// Request Interceptor: Automatically attach the Bearer token
-api.interceptors.request.use(
-	(config) => {
-		const token = localStorage.getItem('token');
-		if (token && config.headers) {
-			config.headers.Authorization = `Bearer ${token}`;
-		}
-		return config;
-	},
-	(error) => {
-		return Promise.reject(error);
-	},
-);
+api.interceptors.request.use((config) => {
+	const token = localStorage.getItem('token');
+	if (token) config.headers.Authorization = `Bearer ${token}`;
+	return config;
+});
 
 api.interceptors.response.use(
 	(response) => response,

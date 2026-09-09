@@ -32,7 +32,9 @@ export const Checkout = () => {
 		setIsProcessing(true);
 		setError('');
 		try {
-			const response = await api.post(`/tickets/buy/${eventId}`);
+			const response = await api.post(`/tickets/buy/${eventId}`, {
+				callbackUrl: `${window.location.origin}/payment/verify`,
+			});
 			const data = response.data?.data ?? response.data;
 			const paymentUrl = data.authorizationUrl ?? data.authorization_url;
 			if (paymentUrl) {

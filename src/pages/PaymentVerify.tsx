@@ -19,7 +19,11 @@ export const PaymentVerify = () => {
 		if (started.current) return;
 		started.current = true;
 		if (!reference) return;
-		api.post(`/tickets/verify/${reference}`)
+		const verificationRequest = api.defaults.baseURL?.endsWith('/api/v1')
+			? api.get(`/tickets/verify/${reference}`)
+			: api.post(`/tickets/verify/${reference}`);
+
+		verificationRequest
 			.then((response) => {
 				setTicket(response.data.data);
 				setStatus('success');

@@ -15,8 +15,8 @@ npm install
 npm run dev
 ```
 
-The app normalizes `VITE_API_URL` to the `/api/v2` backend prefix. Production
-values should still include the full API URL shown in `.env.example`.
+`VITE_API_URL` contains the backend origin. The client uses the deployed `/api/v2`
+API automatically.
 
 ## Quality checks
 
