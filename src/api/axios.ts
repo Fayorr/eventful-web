@@ -2,11 +2,19 @@ import axios from 'axios';
 
 const configuredUrl = (
 	import.meta.env.VITE_API_URL || 'https://eventful-api.hostless.app'
-).replace(/\/$/, '');
+)
+	.trim()
+	.replace(/\/+$/, '');
 
-const baseURL = /\/api\/v\d+$/.test(configuredUrl)
-	? configuredUrl
-	: `${configuredUrl}/api/v1`;
+// Keep the first configured API version and collapse accidental duplicates such
+// as `/api/v1/api/v2` into one canonical base URL.
+const configuredVersion = configuredUrl.match(/\/api\/(v\d+)/)?.[1] || 'v1';
+const apiOrigin = configuredUrl.replace(/(?:\/api\/v\d+)+$/, '');
+const useDevelopmentProxy =
+	import.meta.env.DEV && apiOrigin === 'https://eventful-api.hostless.app';
+const baseURL = useDevelopmentProxy
+	? `/api/${configuredVersion}`
+	: `${apiOrigin}/api/${configuredVersion}`;
 
 const api = axios.create({
 	baseURL,
