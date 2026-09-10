@@ -92,8 +92,8 @@ export const Home = () => {
 						>
 							Log in
 						</Link>
-						<Link to='/register'>
-							<Button className='min-h-10 px-4 py-2'>Create account</Button>
+						<Link to='/events'>
+							<Button className='min-h-10 px-4 py-2'>Dashboard</Button>
 						</Link>
 					</nav>
 				</div>
