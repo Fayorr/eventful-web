@@ -35,7 +35,7 @@ export const MainLayout = () => {
 		<div className='min-h-screen bg-canvas'>
 			<header className='sticky top-0 z-30 border-b border-line bg-white/95 backdrop-blur-sm'>
 				<div className='mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-8'>
-					<Link to='/events' className='flex shrink-0 items-center gap-2 text-lg font-bold tracking-tight text-ink'>
+					<Link to='/' className='flex shrink-0 items-center gap-2 text-lg font-bold tracking-tight text-ink'>
 						<span className='grid size-8 place-items-center rounded-lg bg-primary text-white'>
 							<TicketCheck size={18} />
 						</span>
