@@ -12,6 +12,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/axios';
 import { Button } from '../components/ui/Button';
+import { Skeleton } from '../components/ui/Skeleton';
 import {
 	formatEventDate,
 	formatEventTime,
@@ -27,6 +28,32 @@ interface ShareLinks {
 	linkedin: string;
 	copyUrl: string;
 }
+
+const EventsSkeleton = () => (
+	<div className='mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3' aria-busy='true'>
+		<span className='sr-only' role='status'>Loading events</span>
+		{Array.from({ length: 3 }, (_, index) => (
+			<article key={index} className='flex min-h-96 flex-col border border-line bg-white p-6'>
+				<div className='flex items-center justify-between gap-4'>
+					<Skeleton className='h-6 w-20 rounded-full' />
+					<Skeleton className='size-10 rounded-lg' />
+				</div>
+				<Skeleton className='mt-7 h-7 w-4/5 rounded' />
+				<div className='mt-5 space-y-3'>
+					<Skeleton className='h-4 w-full rounded' />
+					<Skeleton className='h-4 w-11/12 rounded' />
+					<Skeleton className='h-4 w-3/5 rounded' />
+				</div>
+				<div className='mt-auto space-y-3 border-t border-line pt-5'>
+					<Skeleton className='h-4 w-3/4 rounded' />
+					<Skeleton className='h-4 w-full rounded' />
+					<Skeleton className='h-4 w-2/5 rounded' />
+				</div>
+				<Skeleton className='mt-6 min-h-11 w-full rounded-xl' />
+			</article>
+		))}
+	</div>
+);
 
 export const Events = () => {
 	const [events, setEvents] = useState<EventRecord[]>([]);
@@ -107,8 +134,6 @@ export const Events = () => {
 		);
 	};
 
-	if (isLoading) return <div className='border border-line bg-white px-6 py-16 text-center text-slate-600'>Loading events…</div>;
-
 	return (
 		<div>
 			<div className='flex flex-col justify-between gap-6 border-b border-line pb-8 lg:flex-row lg:items-end'>
@@ -124,7 +149,9 @@ export const Events = () => {
 				</label>
 			</div>
 
-			{error ? (
+			{isLoading ? (
+				<EventsSkeleton />
+			) : error ? (
 				<div role='alert' className='mt-8 border-l-4 border-red-600 bg-red-50 px-5 py-4 text-red-800'>{error}</div>
 			) : upcoming.length ? (
 				<div className='mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3'>{upcoming.map((event) => <EventCard key={getEventId(event)} event={event} />)}</div>

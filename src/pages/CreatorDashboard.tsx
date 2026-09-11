@@ -1,6 +1,7 @@
 import { CalendarRange, CheckCircle2, Plus, Ticket, WalletCards } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Skeleton } from '../components/ui/Skeleton';
 import { getCreatorAnalytics, getPaymentHistory } from '../features/dashboard/dashboard.service';
 
 interface Analytics {
@@ -51,8 +52,6 @@ export const CreatorDashboard = () => {
 			.finally(() => setIsLoading(false));
 	}, []);
 
-	if (isLoading) return <div className='border border-line bg-white px-6 py-16 text-center text-slate-600'>Loading dashboard…</div>;
-
 	const stats = [
 		{ label: 'Revenue', value: money(ledger?.totalRevenue ?? analytics?.totalRevenue), icon: WalletCards },
 		{ label: 'Events', value: analytics?.totalEvents ?? 0, icon: CalendarRange },
@@ -73,11 +72,12 @@ export const CreatorDashboard = () => {
 
 			{error && <div role='alert' className='mt-8 border-l-4 border-red-600 bg-red-50 px-5 py-4 text-red-800'>{error}</div>}
 
-			<div className='mt-8 grid gap-px overflow-hidden border border-line bg-line sm:grid-cols-2 xl:grid-cols-4'>
+			<div className='mt-8 grid gap-px overflow-hidden border border-line bg-line sm:grid-cols-2 xl:grid-cols-4' aria-busy={isLoading}>
+				{isLoading && <span className='sr-only' role='status'>Loading dashboard totals</span>}
 				{stats.map(({ label, value, icon: Icon }) => (
 					<div key={label} className='bg-white p-6'>
 						<div className='flex items-center justify-between gap-5'><span className='text-sm font-semibold text-slate-500'>{label}</span><Icon size={19} className='text-primary' /></div>
-						<p className='mt-7 text-3xl font-bold tracking-tight text-ink'>{value}</p>
+						{isLoading ? <Skeleton className='mt-7 h-9 w-24 rounded' /> : <p className='mt-7 text-3xl font-bold tracking-tight text-ink'>{value}</p>}
 					</div>
 				))}
 			</div>
@@ -85,15 +85,21 @@ export const CreatorDashboard = () => {
 			<section className='mt-10'>
 				<div className='mb-4 flex items-center justify-between gap-4'>
 					<h2 className='text-2xl font-bold text-ink'>Recent payments</h2>
-					<p className='text-sm text-slate-500'>{ledger?.transactionCount ?? 0} total</p>
+					{isLoading ? <Skeleton className='h-5 w-16 rounded' /> : <p className='text-sm text-slate-500'>{ledger?.transactionCount ?? 0} total</p>}
 				</div>
-				<div className='overflow-x-auto border border-line bg-white'>
+				<div className='overflow-x-auto border border-line bg-white' aria-busy={isLoading}>
 					<table className='min-w-full border-collapse text-left'>
 						<thead className='border-b border-line bg-slate-50 text-sm text-slate-500'>
 							<tr><th className='px-5 py-4 font-semibold'>Event</th><th className='px-5 py-4 font-semibold'>Buyer</th><th className='px-5 py-4 font-semibold'>Amount</th><th className='px-5 py-4 font-semibold'>Date</th></tr>
 						</thead>
 						<tbody className='divide-y divide-line text-sm'>
-							{ledger?.transactions?.length ? ledger.transactions.map((transaction) => (
+							{isLoading ? Array.from({ length: 3 }, (_, index) => (
+								<tr key={index}>
+									{Array.from({ length: 4 }, (__, cellIndex) => (
+										<td key={cellIndex} className='px-5 py-5'><Skeleton className={`h-4 rounded ${cellIndex === 1 ? 'w-40' : 'w-24'}`} /></td>
+									))}
+								</tr>
+							)) : ledger?.transactions?.length ? ledger.transactions.map((transaction) => (
 								<tr key={transaction.id ?? transaction._id} className='hover:bg-slate-50'>
 									<td className='whitespace-nowrap px-5 py-4 font-semibold text-ink'>{transaction.event?.title ?? 'Event'}</td>
 									<td className='px-5 py-4 text-slate-600'><span className='block font-medium text-ink'>{transaction.eventee?.name ?? 'Attendee'}</span>{transaction.eventee?.email}</td>
